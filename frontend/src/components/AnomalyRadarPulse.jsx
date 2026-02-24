@@ -14,6 +14,7 @@ export default function AnomalyRadarPulse({ driftData }) {
   // Derive status from drift data
   const driftStatus = getDriftStatus(driftData?.accuracy_drop_percentage);
   const isDrifting = driftData?.detected || false;
+  const accuracyDrop = driftData?.accuracy_drop_percentage;
   
   // Pulse animation intensity based on drift severity
   const pulseIntensity = driftData?.accuracy_drop_percentage ? 
@@ -28,7 +29,7 @@ export default function AnomalyRadarPulse({ driftData }) {
 
   return (
     <div 
-      className="relative rounded-xl shadow-md p-6 border overflow-hidden"
+      className="relative rounded-xl shadow-md p-6 border overflow-hidden h-full min-h-[360px] flex flex-col"
       style={{ 
         background: `linear-gradient(135deg, ${driftStatus.color}15 0%, ${driftStatus.color}05 100%)`,
         borderColor: driftStatus.color + '30'
@@ -44,7 +45,7 @@ export default function AnomalyRadarPulse({ driftData }) {
         }}
       ></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-lg font-semibold" style={{ color: medicalTheme.colors.primary }}>
             Drift Status Monitor
@@ -86,6 +87,21 @@ export default function AnomalyRadarPulse({ driftData }) {
                 style={{ backgroundColor: driftStatus.color }}
               ></div>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-lg border bg-white/80" style={{ borderColor: driftStatus.color + '20' }}>
+            <p className="text-xs text-gray-600 mb-1">Accuracy Drop</p>
+            <p className="text-lg font-bold" style={{ color: driftStatus.color }}>
+              {accuracyDrop !== undefined ? `${accuracyDrop.toFixed(2)}%` : '0.00%'}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg border bg-white/80" style={{ borderColor: driftStatus.color + '20' }}>
+            <p className="text-xs text-gray-600 mb-1">Drift Status</p>
+            <p className="text-lg font-bold" style={{ color: driftStatus.color }}>
+              {isDrifting ? 'Detected' : 'Stable'}
+            </p>
           </div>
         </div>
 

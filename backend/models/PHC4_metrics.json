@@ -1,0 +1,16 @@
+{
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "training_samples": 1600,
+  "test_samples": 400,
+  "classes": [
+    "Dengue",
+    "Healthy",
+    "Malaria",
+    "Pneumonia",
+    "Typhoid",
+    "Viral Fever"
+  ]
+}

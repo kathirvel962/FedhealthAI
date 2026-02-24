@@ -4,7 +4,6 @@ import { dashboardAPI, phcAPI } from '../api';
 import PatientForm from '../components/PatientForm';
 import TriageConfidenceRadar from '../components/TriageConfidenceRadar';
 import AnomalyRadarPulse from '../components/AnomalyRadarPulse';
-import WhatChangedInsightCard from '../components/WhatChangedInsightCard';
 import SymptomDistributionVisualization from '../components/SymptomDistributionVisualization';
 import KPICard from '../components/KPICard';
 import PremiumCard from '../components/PremiumCard';
@@ -18,10 +17,10 @@ export default function PHCDashboard() {
   const phcId = user.phc_id || `PHC${user.id.slice(-1)}`;
   
   const [patients, setPatients] = useState([]);
-  const [historicalPatients, setHistoricalPatients] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [showPatientForm, setShowPatientForm] = useState(false);
 
   useEffect(() => {
     loadDashboard();
@@ -32,35 +31,12 @@ export default function PHCDashboard() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [patientsRes, metricsRes, historyRes] = await Promise.all([
+      const [patientsRes, metricsRes] = await Promise.all([
         phcAPI.getPatients(),
-        dashboardAPI.getPHCMetrics(),
-        dashboardAPI.getCohortHistory().catch(() => ({ data: { snapshots: [] } }))
+        dashboardAPI.getPHCMetrics()
       ]);
       setPatients(patientsRes.data.patients || []);
       setMetrics(metricsRes.data);
-      
-      // Get previous snapshot if available (for historical comparison)
-      const snapshots = historyRes.data.snapshots || [];
-      if (snapshots.length > 1) {
-        // Second snapshot is the most recent historical one
-        const previousSnapshot = snapshots[1];
-        // Convert snapshot to patient array format for comparison
-        const reconstructedPatients = Array(Math.floor(previousSnapshot.total_patients || 10)).fill(null).map(() => ({
-          age: Math.round(previousSnapshot.average_age || 0),
-          fever: Math.random() < (previousSnapshot.fever_percentage / 100),
-          cough: Math.random() < (previousSnapshot.cough_percentage / 100),
-          fatigue: Math.random() < (previousSnapshot.fatigue_percentage / 100),
-          headache: Math.random() < (previousSnapshot.headache_percentage / 100),
-          vomiting: Math.random() < (previousSnapshot.vomiting_percentage / 100),
-          breathlessness: Math.random() < (previousSnapshot.breathlessness_percentage / 100),
-          wbc_count: Math.round(previousSnapshot.average_wbc_count || 9000),
-        }));
-        setHistoricalPatients(reconstructedPatients);
-      } else {
-        setHistoricalPatients(null);
-      }
-      
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -70,6 +46,7 @@ export default function PHCDashboard() {
 
   const handlePatientSubmitted = () => {
     loadDashboard();
+    setShowPatientForm(false);
   };
 
   const getSeverityColor = (severity) => {
@@ -177,11 +154,12 @@ export default function PHCDashboard() {
 
         {/* AI Diagnostics Section */}
         {metrics && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 items-stretch">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              className="h-full"
             >
               <TriageConfidenceRadar patients={patients} />
             </motion.div>
@@ -190,32 +168,21 @@ export default function PHCDashboard() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              className="h-full"
             >
               <AnomalyRadarPulse driftData={metrics.drift} />
             </motion.div>
           </div>
         )}
 
-        {/* What Changed Insight Card */}
-        {metrics && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mb-10"
-          >
-            <WhatChangedInsightCard patients={patients} historicalPatients={historicalPatients} />
-          </motion.div>
-        )}
-
-        {/* Alert History & Symptom Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          {/* Alert History Chart */}
-          {metrics?.alerts?.history_7_days && metrics.alerts.history_7_days.length > 0 ? (
+        {/* Alert History */}
+        {metrics?.alerts?.history_7_days && metrics.alerts.history_7_days.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
+              className="lg:col-span-2"
             >
               <PremiumCard title="Alert History (7 Days)" subtitle="Trend analysis">
                 <ResponsiveContainer width="100%" height={300}>
@@ -244,17 +211,18 @@ export default function PHCDashboard() {
                 </ResponsiveContainer>
               </PremiumCard>
             </motion.div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {/* Symptom Distribution */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <SymptomDistributionVisualization patients={patients} />
-          </motion.div>
-        </div>
+        {/* Diagnosis Distribution - Full Width */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.45 }}
+          className="mb-10"
+        >
+          <SymptomDistributionVisualization patients={patients} />
+        </motion.div>
 
         {/* Patient Entry Form */}
         <motion.div
@@ -263,7 +231,22 @@ export default function PHCDashboard() {
           transition={{ duration: 0.5, delay: 0.5 }}
           className="mb-10"
         >
-          <PatientForm onSuccess={handlePatientSubmitted} />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Patient Submission</h2>
+            <button
+              onClick={() => setShowPatientForm((prev) => !prev)}
+              className="btn-premium"
+              style={{
+                background: medicalTheme.colors.gradients.primary_gradient,
+                color: 'white'
+              }}
+            >
+              {showPatientForm ? 'Close Form' : 'Submit Patient'}
+            </button>
+          </div>
+          {showPatientForm && (
+            <PatientForm onSuccess={handlePatientSubmitted} />
+          )}
         </motion.div>
 
         {/* Patient Records */}

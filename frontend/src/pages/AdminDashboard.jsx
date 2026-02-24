@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const [districtMetrics, setDistrictMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [aggregating, setAggregating] = useState(false);
+  const [aggregateMessage, setAggregateMessage] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -33,12 +34,19 @@ export default function AdminDashboard() {
 
   const handleAggregate = async () => {
     setAggregating(true);
+    setAggregateMessage(null);
     try {
       await adminAPI.aggregateModels();
-      alert('✓ Models aggregated successfully!');
+      setAggregateMessage({
+        type: 'success',
+        text: 'Models aggregated successfully. Global model updated.'
+      });
       await loadDashboard();
     } catch (error) {
-      alert('Error aggregating models: ' + (error.response?.data?.error || error.message));
+      setAggregateMessage({
+        type: 'error',
+        text: 'Aggregation failed: ' + (error.response?.data?.error || error.message)
+      });
       console.error('Aggregation error:', error);
     }
     setAggregating(false);
@@ -186,6 +194,46 @@ export default function AdminDashboard() {
             />
           </div>
         ) : null}
+
+        {/* Federation Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="mb-10"
+        >
+          <PremiumCard
+            title="Federation Actions"
+            subtitle="Manually trigger global model aggregation"
+            variant="light"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Use this to aggregate latest PHC models into a new global model.</p>
+                {aggregateMessage && (
+                  <p
+                    className={`mt-2 text-sm font-medium ${aggregateMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}
+                  >
+                    {aggregateMessage.text}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleAggregate}
+                disabled={aggregating}
+                className="btn-premium flex items-center gap-2"
+                style={{
+                  background: medicalTheme.colors.gradients.forecast_gradient,
+                  color: 'white',
+                  opacity: aggregating ? 0.7 : 1
+                }}
+              >
+                <FiZap className={aggregating ? 'animate-spin' : ''} />
+                {aggregating ? 'Aggregating...' : 'Aggregate Models'}
+              </button>
+            </div>
+          </PremiumCard>
+        </motion.div>
 
         {/* PHC Reliability Index */}
         {districtMetrics && (

@@ -80,27 +80,27 @@ export default function SymptomDistributionVisualization({ patients = [] }) {
 
   return (
     <div 
-      className="rounded-xl shadow-md p-6 border"
+      className="rounded-xl shadow-md p-6 border w-full"
       style={{ 
         background: `linear-gradient(135deg, ${medicalTheme.colors.primary}08 0%, ${medicalTheme.colors.secondary}08 100%)`,
         borderColor: medicalTheme.colors.primary + '30'
       }}
     >
-      <h3 className="text-lg font-semibold mb-6" style={{ color: medicalTheme.colors.primary }}>
+      <h3 className="text-xl font-semibold mb-6" style={{ color: medicalTheme.colors.primary }}>
         🏥 Diagnosis Distribution
       </h3>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart */}
-        <div className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={300}>
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        {/* Chart - Full size */}
+        <div className="xl:col-span-3">
+          <ResponsiveContainer width="100%" height={440}>
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={120}
+                innerRadius={105}
+                outerRadius={165}
                 paddingAngle={2}
                 dataKey="value"
               >
@@ -120,7 +120,7 @@ export default function SymptomDistributionVisualization({ patients = [] }) {
                 align="right"
                 verticalAlign="middle"
                 formatter={(value, entry) => (
-                  <span style={{ fontSize: '12px', color: '#374151' }}>
+                  <span style={{ fontSize: '14px', color: '#374151', fontWeight: '600' }}>
                     {entry.payload.name}
                   </span>
                 )}
@@ -129,30 +129,32 @@ export default function SymptomDistributionVisualization({ patients = [] }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Statistics */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-600 mb-4">BREAKDOWN</p>
-          {data.map((item, idx) => (
-            <div 
-              key={idx}
-              className="p-3 rounded-lg border-l-4 bg-white hover:shadow-sm transition-shadow"
-              style={{ borderColor: colors[idx % colors.length] }}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <p className="text-sm font-medium text-gray-800">{item.name}</p>
-                <span 
-                  className="px-2 py-1 rounded text-xs font-semibold"
-                  style={{
-                    background: colors[idx % colors.length] + '15',
-                    color: colors[idx % colors.length]
-                  }}
-                >
-                  {item.percentage}%
-                </span>
+        {/* Statistics - Side Panel */}
+        <div className="xl:col-span-2 space-y-4">
+          <p className="text-base font-semibold text-gray-700 mb-4">BREAKDOWN</p>
+          <div className="max-h-[440px] overflow-y-auto pr-2">
+            {data.map((item, idx) => (
+              <div 
+                key={idx}
+                className="p-4 rounded-lg border-l-4 bg-white hover:shadow-md transition-shadow mb-3"
+                style={{ borderColor: colors[idx % colors.length] }}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <p className="text-base font-semibold text-gray-800">{item.name}</p>
+                  <span 
+                    className="px-3 py-1 rounded text-sm font-bold whitespace-nowrap ml-2"
+                    style={{
+                      background: colors[idx % colors.length] + '20',
+                      color: colors[idx % colors.length]
+                    }}
+                  >
+                    {item.percentage}%
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500">{item.value} cases</p>
               </div>
-              <p className="text-xs text-gray-500">{item.value} cases</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
