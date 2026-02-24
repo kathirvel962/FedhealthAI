@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:5.0
+    container_name: fedhealth-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: fedhealth
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - fedhealth-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fedhealth-backend
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: fedhealth.settings
+      MONGODB_HOST: mongodb://mongodb:27017/
+      MONGODB_DB: fedhealth
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - fedhealth-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fedhealth-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    depends_on:
+      - backend
+    networks:
+      - fedhealth-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  fedhealth-network:
+    driver: bridge
